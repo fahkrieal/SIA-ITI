@@ -1,0 +1,331 @@
+{
+	"info": {
+		"_postman_id": "c1f7a072-4d2c-47ea-9a84-0a8b4b7a1234",
+		"name": "Sistem Informasi Akademik (SIA) - API Collection",
+		"description": "Koleksi Postman REST API Backend Sistem Informasi Akademik (SIA) berbasis Laravel 13, Sanctum, dan MySQL.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "mhs_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "dosen_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Autentikasi",
+			"item": [
+				{
+					"name": "Login Mahasiswa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"mahasiswa@iti.ac.id\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Dosen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"dosen@iti.ac.id\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Profil Saya (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Mahasiswa",
+			"item": [
+				{
+					"name": "Daftar Nilai Mahasiswa",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mahasiswa/nilai",
+							"host": ["{{base_url}}"],
+							"path": ["mahasiswa", "nilai"]
+						}
+					}
+				},
+				{
+					"name": "Kartu Hasil Studi (KHS) Semester 20231",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mahasiswa/khs/20231",
+							"host": ["{{base_url}}"],
+							"path": ["mahasiswa", "khs", "20231"]
+						}
+					}
+				},
+				{
+					"name": "Indeks Prestasi Kumulatif (IPK)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mahasiswa/ipk",
+							"host": ["{{base_url}}"],
+							"path": ["mahasiswa", "ipk"]
+						}
+					}
+				},
+				{
+					"name": "Transkrip Akademik Lengkap",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mhs_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/mahasiswa/transkrip",
+							"host": ["{{base_url}}"],
+							"path": ["mahasiswa", "transkrip"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Dosen",
+			"item": [
+				{
+					"name": "Daftar Kelas yang Diampu",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{dosen_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dosen/kelas",
+							"host": ["{{base_url}}"],
+							"path": ["dosen", "kelas"]
+						}
+					}
+				},
+				{
+					"name": "Daftar Mahasiswa dalam Kelas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{dosen_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dosen/kelas/5/mahasiswa",
+							"host": ["{{base_url}}"],
+							"path": ["dosen", "kelas", "5", "mahasiswa"]
+						}
+					}
+				},
+				{
+					"name": "Komponen Penilaian Kelas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{dosen_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dosen/kelas/5/komponen-nilai",
+							"host": ["{{base_url}}"],
+							"path": ["dosen", "kelas", "5", "komponen-nilai"]
+						}
+					}
+				},
+				{
+					"name": "Input / Ubah Nilai Peserta",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{dosen_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nilai\": [\n    {\n      \"komponen_nilai_id\": 13,\n      \"nilai\": 85.00\n    },\n    {\n      \"komponen_nilai_id\": 14,\n      \"nilai\": 80.00\n    },\n    {\n      \"komponen_nilai_id\": 15,\n      \"nilai\": 90.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/dosen/peserta/6/nilai",
+							"host": ["{{base_url}}"],
+							"path": ["dosen", "peserta", "6", "nilai"]
+						}
+					}
+				},
+				{
+					"name": "Publikasi Nilai Kelas",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{dosen_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dosen/kelas/5/publikasi-nilai",
+							"host": ["{{base_url}}"],
+							"path": ["dosen", "kelas", "5", "publikasi-nilai"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
