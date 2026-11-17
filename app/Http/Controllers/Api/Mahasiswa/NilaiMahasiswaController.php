@@ -8,11 +8,14 @@ use App\Models\PesertaKuliah;
 use App\Services\AcademicPerformanceService;
 use App\Services\KhsService;
 use App\Services\TranscriptService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NilaiMahasiswaController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected AcademicPerformanceService $performanceService,
         protected KhsService $khsService,
@@ -27,10 +30,11 @@ class NilaiMahasiswaController extends Controller
         $mahasiswa = $request->user()->mahasiswa;
 
         if (! $mahasiswa) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data mahasiswa tidak ditemukan untuk akun ini.',
-            ], 404);
+            return $this->errorResponse(
+                message: 'Data mahasiswa tidak ditemukan untuk akun ini.',
+                errors: ['code' => 'STUDENT_NOT_FOUND'],
+                statusCode: 404
+            );
         }
 
         $daftarNilai = PesertaKuliah::query()
@@ -38,11 +42,18 @@ class NilaiMahasiswaController extends Controller
             ->with(['kelasKuliah.mataKuliah', 'kelasKuliah.semester', 'kelasKuliah.dosen', 'nilaiAkhir'])
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar nilai mahasiswa berhasil diambil.',
-            'data' => MahasiswaNilaiResource::collection($daftarNilai),
-        ], 200);
+        $collection = MahasiswaNilaiResource::collection($daftarNilai);
+
+        return $this->successResponse(
+            data: $collection,
+            message: 'Daftar nilai mahasiswa berhasil diambil.',
+            meta: [
+                'page'  => 1,
+                'limit' => $collection->count(),
+                'total' => $collection->count(),
+            ],
+            statusCode: 200
+        );
     }
 
     /**
@@ -53,19 +64,20 @@ class NilaiMahasiswaController extends Controller
         $mahasiswa = $request->user()->mahasiswa;
 
         if (! $mahasiswa) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data mahasiswa tidak ditemukan untuk akun ini.',
-            ], 404);
+            return $this->errorResponse(
+                message: 'Data mahasiswa tidak ditemukan untuk akun ini.',
+                errors: ['code' => 'STUDENT_NOT_FOUND'],
+                statusCode: 404
+            );
         }
 
         $khsData = $this->khsService->getKhs($mahasiswa, $semester);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kartu Hasil Studi (KHS) berhasil diambil.',
-            'data' => $khsData,
-        ], 200);
+        return $this->successResponse(
+            data: $khsData,
+            message: 'Kartu Hasil Studi (KHS) berhasil diambil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -76,18 +88,17 @@ class NilaiMahasiswaController extends Controller
         $mahasiswa = $request->user()->mahasiswa;
 
         if (! $mahasiswa) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data mahasiswa tidak ditemukan untuk akun ini.',
-            ], 404);
+            return $this->errorResponse(
+                message: 'Data mahasiswa tidak ditemukan untuk akun ini.',
+                errors: ['code' => 'STUDENT_NOT_FOUND'],
+                statusCode: 404
+            );
         }
 
         $ipkData = $this->performanceService->calculateIpk($mahasiswa);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Indeks Prestasi Kumulatif (IPK) berhasil diambil.',
-            'data' => [
+        return $this->successResponse(
+            data: [
                 'mahasiswa' => [
                     'nim' => $mahasiswa->nim,
                     'nama' => $mahasiswa->nama,
@@ -96,7 +107,9 @@ class NilaiMahasiswaController extends Controller
                 ],
                 'akademik' => $ipkData,
             ],
-        ], 200);
+            message: 'Data Indeks Prestasi Kumulatif (IPK) berhasil diambil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -107,18 +120,19 @@ class NilaiMahasiswaController extends Controller
         $mahasiswa = $request->user()->mahasiswa;
 
         if (! $mahasiswa) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data mahasiswa tidak ditemukan untuk akun ini.',
-            ], 404);
+            return $this->errorResponse(
+                message: 'Data mahasiswa tidak ditemukan untuk akun ini.',
+                errors: ['code' => 'STUDENT_NOT_FOUND'],
+                statusCode: 404
+            );
         }
 
         $transcriptData = $this->transcriptService->getTranscript($mahasiswa);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Transkrip akademik berhasil diambil.',
-            'data' => $transcriptData,
-        ], 200);
+        return $this->successResponse(
+            data: $transcriptData,
+            message: 'Transkrip akademik berhasil diambil.',
+            statusCode: 200
+        );
     }
 }

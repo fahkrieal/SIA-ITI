@@ -30,46 +30,61 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
+        // 401 Unauthorized
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthenticated. Sesi login telah berakhir atau token tidak valid.',
+                    'data'    => null,
+                    'errors'  => (object) ['code' => 'UNAUTHENTICATED'],
+                    'meta'    => null,
                 ], 401);
             }
         });
 
+        // 403 Forbidden
         $exceptions->render(function (AuthorizationException|AccessDeniedHttpException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage() ?: 'Forbidden. Anda tidak memiliki akses ke sumber daya ini.',
+                    'data'    => null,
+                    'errors'  => (object) ['code' => 'FORBIDDEN_ACCESS'],
+                    'meta'    => null,
                 ], 403);
             }
         });
 
+        // 404 Not Found
         $exceptions->render(function (ModelNotFoundException|NotFoundHttpException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Data tidak ditemukan.',
+                    'data'    => null,
+                    'errors'  => (object) ['code' => 'RESOURCE_NOT_FOUND'],
+                    'meta'    => null,
                 ], 404);
             }
         });
 
+        // 422 Unprocessable Entity
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validasi data gagal.',
-                    'errors' => $e->errors(),
+                    'data'    => null,
+                    'errors'  => (object) array_merge(['code' => 'VALIDATION_ERROR'], $e->errors()),
+                    'meta'    => null,
                 ], 422);
             }
         });
 
+        // 500 / General Fallback
         $exceptions->render(function (\Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                // Log internal error secara aman tanpa bocor ke client
                 Log::error('API Error: '.$e->getMessage(), [
                     'exception' => get_class($e),
                     'file' => $e->getFile(),
@@ -77,17 +92,20 @@ return Application::configure(basePath: dirname(__DIR__))
                     'url' => $request->fullUrl(),
                 ]);
 
-                // Jangan tampilkan detail error server internal di environment production/client
                 $message = app()->environment('local', 'testing')
                     ? $e->getMessage()
                     : 'Terjadi kesalahan internal pada server.';
 
                 $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                $finalStatus = $statusCode >= 400 && $statusCode < 600 ? $statusCode : 500;
 
                 return response()->json([
                     'success' => false,
                     'message' => $message,
-                ], $statusCode >= 400 && $statusCode < 600 ? $statusCode : 500);
+                    'data'    => null,
+                    'errors'  => (object) ['code' => 'INTERNAL_SERVER_ERROR'],
+                    'meta'    => null,
+                ], $finalStatus);
             }
         });
     })->create();

@@ -11,6 +11,7 @@ use App\Models\KelasKuliah;
 use App\Models\NilaiKomponen;
 use App\Models\PesertaKuliah;
 use App\Services\NilaiCalculationService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Gate;
 
 class KelasDosenController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         protected NilaiCalculationService $calculationService
     ) {}
@@ -30,10 +33,11 @@ class KelasDosenController extends Controller
         $dosen = $request->user()->dosen;
 
         if (! $dosen) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data profil dosen tidak ditemukan.',
-            ], 404);
+            return $this->errorResponse(
+                message: 'Data profil dosen tidak ditemukan.',
+                errors: ['code' => 'LECTURER_NOT_FOUND'],
+                statusCode: 404
+            );
         }
 
         $kelasList = KelasKuliah::query()
@@ -42,11 +46,18 @@ class KelasDosenController extends Controller
             ->withCount('pesertaKuliah')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar kelas yang diampu berhasil diambil.',
-            'data' => KelasKuliahResource::collection($kelasList),
-        ], 200);
+        $collection = KelasKuliahResource::collection($kelasList);
+
+        return $this->successResponse(
+            data: $collection,
+            message: 'Daftar kelas yang diampu berhasil diambil.',
+            meta: [
+                'page'  => 1,
+                'limit' => $collection->count(),
+                'total' => $collection->count(),
+            ],
+            statusCode: 200
+        );
     }
 
     /**
@@ -61,14 +72,14 @@ class KelasDosenController extends Controller
             ->with(['mahasiswa', 'nilaiAkhir', 'nilaiKomponen.komponenNilai'])
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar mahasiswa peserta kelas berhasil diambil.',
-            'data' => [
+        return $this->successResponse(
+            data: [
                 'kelas' => new KelasKuliahResource($kelas),
                 'peserta' => PesertaKuliahResource::collection($pesertaList),
             ],
-        ], 200);
+            message: 'Daftar mahasiswa peserta kelas berhasil diambil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -81,16 +92,16 @@ class KelasDosenController extends Controller
         $komponen = $kelas->komponenNilai()->get();
         $totalBobot = (float) $komponen->sum('bobot_persen');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Komponen penilaian kelas berhasil diambil.',
-            'data' => [
+        return $this->successResponse(
+            data: [
                 'kelas_id' => $kelas->id,
                 'total_bobot_persen' => $totalBobot,
                 'is_complete' => abs($totalBobot - (float) config('academic.required_total_weight', 100)) < 0.01,
                 'komponen' => KomponenNilaiResource::collection($komponen),
             ],
-        ], 200);
+            message: 'Komponen penilaian kelas berhasil diambil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -124,11 +135,11 @@ class KelasDosenController extends Controller
             ];
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Nilai mahasiswa berhasil disimpan.',
-            'data' => new PesertaKuliahResource($result['peserta']),
-        ], 200);
+        return $this->successResponse(
+            data: new PesertaKuliahResource($result['peserta']),
+            message: 'Nilai mahasiswa berhasil disimpan.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -144,16 +155,20 @@ class KelasDosenController extends Controller
         try {
             $updatedKelas = $this->calculationService->publishClassGrades($kelas);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Nilai kelas berhasil dipublikasikan secara resmi.',
-                'data' => new KelasKuliahResource($updatedKelas),
-            ], 200);
+            return $this->successResponse(
+                data: new KelasKuliahResource($updatedKelas),
+                message: 'Nilai kelas berhasil dipublikasikan secara resmi.',
+                statusCode: 200
+            );
         } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return $this->errorResponse(
+                message: $e->getMessage(),
+                errors: [
+                    'code' => 'INVALID_GRADE_WEIGHT',
+                    'detail' => $e->getMessage(),
+                ],
+                statusCode: 422
+            );
         }
     }
 }

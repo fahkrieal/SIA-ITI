@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Login pengguna (Mahasiswa atau Dosen) dan mengembalikan token Sanctum.
      */
@@ -20,10 +23,14 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email atau password yang Anda masukkan salah.',
-            ], 401);
+            return $this->errorResponse(
+                message: 'Email atau password yang Anda masukkan salah.',
+                errors: [
+                    'code' => 'INVALID_CREDENTIALS',
+                    'detail' => 'Kombinasi email dan kata sandi tidak cocok.'
+                ],
+                statusCode: 401
+            );
         }
 
         // Muat relasi profil mahasiswa atau dosen
@@ -32,15 +39,15 @@ class AuthController extends Controller
         // Buat token akses Sanctum baru
         $token = $user->createToken('sia-auth-token', [$user->role])->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login berhasil.',
-            'data' => [
+        return $this->successResponse(
+            data: [
                 'token' => $token,
                 'token_type' => 'Bearer',
                 'user' => new UserResource($user),
             ],
-        ], 200);
+            message: 'Login berhasil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -50,11 +57,11 @@ class AuthController extends Controller
     {
         $user = $request->user()->load(['mahasiswa', 'dosen']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profil pengguna berhasil diambil.',
-            'data' => new UserResource($user),
-        ], 200);
+        return $this->successResponse(
+            data: new UserResource($user),
+            message: 'Profil pengguna berhasil diambil.',
+            statusCode: 200
+        );
     }
 
     /**
@@ -64,9 +71,10 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout berhasil. Token telah dicabut.',
-        ], 200);
+        return $this->successResponse(
+            data: null,
+            message: 'Logout berhasil. Token telah dicabut.',
+            statusCode: 200
+        );
     }
 }
